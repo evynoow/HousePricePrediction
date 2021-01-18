@@ -1,5 +1,5 @@
 
-# ## Importing Libraries and Data
+#Importing Libraries and Data
 
 import numpy as np
 import pandas as pd
@@ -33,44 +33,39 @@ Ames = Ames.drop(columns = "Order")
 
 print((Ames.apply(lambda a: a.isnull().values.any())).sum(),"columns have missing data")
 
-missingvalues = Ames.isnull().sum().sort_values(ascending = False)
+missingvalues = Ames.isnull().sum().sort_values(ascending = False) #calculating missing values
 missingvalues = missingvalues.reset_index()
-missingvalues['Percent'] = missingvalues.iloc[:, 1].apply(lambda x: x*100/len(Ames))
-missingvalues.columns = ['Columns', 'MissingValues',"Percent"]
-missingvalues = missingvalues[missingvalues['MissingValues'] > 0]
+missingvalues['Percent'] = missingvalues.iloc[:, 1].apply(lambda x: x*100/len(Ames)) # calculating The percentage of missing values for each feature
+missingvalues.columns = ['Columns', 'MissingValues',"Percent"] #renaming column names
+missingvalues = missingvalues[missingvalues['MissingValues'] > 0] #filtering attributes with no missing values
 print(missingvalues)
 
+#Plotting missing value count for each attribute
 plt.figure(figsize=(13, 6))
 sns.set()
-sns.barplot(x = 'MissingValues', y = 'Columns', data = missingvalues, palette = 'rocket')
+sns.barplot(x = 'MissingValues', y = 'Columns', data = missingvalues, palette = 'rocket') #creating plot
 
 
-# Handling Missing Data
+# Handling Missing Data (Categorical)
 
 #deleting spaces and other characters in columns names for selecting easily
 Ames.columns = Ames.columns.str.replace(" ","").str.replace("/","")
 
 #defining categorical and numerical values
 
-num_var = ['MSSubClass','LotFrontage','LotArea','OverallQual','OverallCond','YearBuilt','YearRemodAdd','MasVnrArea',
-           'BsmtFinSF1','BsmtFinSF2','BsmtUnfSF','TotalBsmtSF','1stFlrSF','2ndFlrSF','LowQualFinSF','GrLivArea',
-           'BsmtFullBath','BsmtHalfBath','FullBath','HalfBath','BedroomAbvGr','KitchenAbvGr','TotRmsAbvGrd',
-           'Fireplaces','GarageYrBlt','GarageCars','GarageArea','WoodDeckSF','OpenPorchSF','EnclosedPorch',
-           '3SsnPorch','ScreenPorch','PoolArea','MiscVal','MoSold','YrSold']
+numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+num_var = list(Ames.select_dtypes(include=numerics).columns.values) #defining numeric values
+cat_var = list(Ames.select_dtypes(include="object").columns.values) #defining categorical values
 
-cat_var = ['MSZoning','Street','Alley','LotShape','LandContour','Utilities','LotConfig','LandSlope','Neighborhood',
-           'Condition1','Condition2','BldgType','HouseStyle','RoofStyle','RoofMatl','Exterior1st','Exterior2nd',
-           'MasVnrType','ExterQual','ExterCond','Foundation','BsmtQual','BsmtCond','BsmtExposure','BsmtFinType1',
-           'BsmtFinType2','Heating','HeatingQC','CentralAir','Electrical','KitchenQual','Functional','FireplaceQu',
-           'GarageType','GarageFinish','GarageQual','GarageCond','PavedDrive','PoolQC', 'Fence', 'MiscFeature',
-           'SaleType','SaleCondition']
+num_var.remove("PID") #dropping PID value which has no power on prediction
+num_var.remove("SalePrice") #dropping SalePrice which will predicted
 
 # create 2 dataframes for numerical and categorical features
 df_num = Ames[num_var]
 df_cat = Ames[cat_var]
-print('df_num', df_num.shape)
-print('df_cat', df_cat.shape)
 
+# Missing values of categorical attributes show that the house does not have that property.
+# So we can fill in the data as "this feature does not exist"
 
 df_cat.PoolQC=["No Pool" if x is np.nan else x for x in df_cat.PoolQC]
 df_cat.FireplaceQu=["No Fireplace" if x is np.nan else x for x in df_cat.FireplaceQu]
@@ -88,4 +83,75 @@ df_cat.GarageCond=["No Garage" if x is np.nan else x for x in df_cat.GarageCond]
 df_cat.GarageQual=["No Garage" if x is np.nan else x for x in df_cat.GarageQual]
 df_cat.MasVnrType=["None" if x is np.nan else x for x in df_cat.MasVnrType]
 df_cat.Electrical=["SBrkr" if x is np.nan else x for x in df_cat.Electrical]
+
+df_cat.isnull().values.any() #Checking if there is nan value left
+
+# Handling Missing Data (Numeric)
+missing_num = df_num.isnull().sum().sort_values(ascending = False)
+missing_num = missing_num.reset_index()
+missing_num['Percent'] = missing_num.iloc[:, 1].apply(lambda x: x*100/len(Ames))
+missing_num.columns = ['Columns', 'MissingValues',"Percent"]
+missing_num = missing_num[missing_num['MissingValues'] > 0]
+print(missingvalues)
+
+# Attributes that shows garage and basement areas can be filled with 0.
+df_num.BsmtHalfBath = df_num.BsmtHalfBath.fillna(0)
+df_num.BsmtFullBath = df_num.BsmtFullBath.fillna(0)
+df_num.GarageArea = df_num.GarageArea.fillna(0)
+df_num.BsmtFinSF1 = df_num.BsmtFinSF1.fillna(0)
+df_num.BsmtFinSF2 = df_num.BsmtFinSF2.fillna(0)
+df_num.BsmtUnfSF = df_num.BsmtUnfSF.fillna(0)
+df_num.TotalBsmtSF = df_num.TotalBsmtSF.fillna(0)
+df_num.GarageCars = df_num.GarageCars.fillna(0)
+
+
+missing_num = df_num.isnull().sum().sort_values(ascending = False) #calculating missing values
+missing_num = missing_num.reset_index()
+missing_num['Percent'] = missing_num.iloc[:, 1].apply(lambda x: x*100/len(Ames)) # calculating The percentage of missing values for each feature
+missing_num.columns = ['Columns', 'MissingValues',"Percent"] #renaming columns
+missing_num = missing_num[missing_num['MissingValues'] > 0] #filtering attributes with no missing values
+print(missing_num)
+
+#There is no attribute which have more than %60 missing values.
+#We use some methods for filling these values instead of deleting them.
+#We can fill these values by calculating mean or median values.
+#Distribution plots of each feature will be drawn to decide which one to choose.
+
+df_num_no_null = df_num.dropna()  #We will plot the data so we should filter missing values first.
+
+plt.figure(figsize=(18, 7))
+plt.subplot(131) #first plot
+sns.distplot(df_num_no_null.LotFrontage) #creating plot
+
+plt.subplot(132) #second plot
+sns.distplot(df_num_no_null.MasVnrArea) #creating plot
+
+plt.subplot(133) #third plot
+sns.distplot(df_num_no_null.GarageYrBlt) #creating plot
+plt.show()
+
+# We can see that LotFrontage attribute is more like normal distribution.
+# MasVnrArea and GarageYtBlt is more like skewed distribution.
+# Based on these plots, we'll impute the missing values in MasVnrArea and GarageYrBlt by the median.
+# The missing values in LotFrontage will be imputed by the mean value.
+
+df_num['LotFrontage'].fillna(df_num['LotFrontage'].mean(), inplace=True) # filling with mean
+df_num['MasVnrArea'].fillna(df_num['MasVnrArea'].median(), inplace=True) # filling with median
+df_num['GarageYrBlt'].fillna(df_num['GarageYrBlt'].median(), inplace=True) # filling with median
+
+df_num.isnull().values.any() # checking
+
+
+# Creating dummy variables for categorical attributes
+# Creating Dummy Variables
+df_cat_dummy = pd.get_dummies(df_cat, drop_first = True) #creates and drops one dummy
+df = pd.concat([df_num, df_cat_dummy], axis = 1) # Concatenate dummy cat vars and num vars
+
+print(df.head(2))
+print(df.shape)
+
+
+
+
+
 
