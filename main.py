@@ -150,8 +150,43 @@ df = pd.concat([df_num, df_cat_dummy], axis = 1) # Concatenate dummy cat vars an
 print(df.head(2))
 print(df.shape)
 
+# Regression Analysis
+# To apply regression attributed that will predict should be distribute as normal distribution.
 
+plt.figure(figsize=(14,5)) #figure size
+plt.subplot(1,2,1) #first plot
+plt.hist(Ames.SalePrice, bins=20, color='b', density=True, label='Sale price') #distribution of sale price
+sns.kdeplot(Ames.SalePrice, color='red')
+plt.title('Ames Houses Sale Price') #title
+plt.xlabel('Price') ; plt.ylabel('#Count') ; plt.legend(loc='upper right')
 
+#Distribution of y is skewed.
+# We need to transform it normal distribution. log algorithm is used.
 
+plt.subplot(1,2,2) #Second plot
+plt.hist(np.log1p(Ames.SalePrice), bins=20, color='b', density=True, label='Sale price') # distribution of logged sale price
+sns.kdeplot(np.log1p(Ames.SalePrice), color='red')
+plt.title('Ames Houses Sale Price - Log transformed')
+plt.xlabel('log(Price)') ; plt.ylabel('#Count') ; plt.legend(loc='upper right')
+plt.show()
+
+X = df
+y = np.log1p(Ames['SalePrice'])
+
+# Splitting the dataset into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
+
+# Linear Regression Model
+regression = LinearRegression()
+
+# Fitting a Linear Regression Model
+regression.fit(X_train, y_train)
+
+# Prediction on the test set: Performance Measures
+y_pred = regression.predict(X_test)
+R2score = r2_score(y_test, y_pred)
+print("R^2 : {}".format(R2score))
+RMSEscore = np.sqrt(mean_squared_error(y_test, y_pred))
+print("RMSE: {}".format(RMSEscore))
 
 
