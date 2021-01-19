@@ -12,6 +12,9 @@ from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV
 import warnings
+
+from sklearn.preprocessing import OneHotEncoder
+
 warnings.filterwarnings("ignore")
 pd.set_option('display.max_rows', 500)
 
@@ -33,7 +36,7 @@ Ames = Ames.drop(columns = "Order")
 
 print((Ames.apply(lambda a: a.isnull().values.any())).sum(),"columns have missing data")
 
-missingvalues = Ames.isnull().sum().sort_values(ascending = False) #calculating missing values
+missingvalues = Ames.isnull().sum().sort_values(ascending = False)  #calculating misisng values
 missingvalues = missingvalues.reset_index()
 missingvalues['Percent'] = missingvalues.iloc[:, 1].apply(lambda x: x*100/len(Ames)) # calculating The percentage of missing values for each feature
 missingvalues.columns = ['Columns', 'MissingValues',"Percent"] #renaming column names
@@ -92,7 +95,7 @@ missing_num = missing_num.reset_index()
 missing_num['Percent'] = missing_num.iloc[:, 1].apply(lambda x: x*100/len(Ames))
 missing_num.columns = ['Columns', 'MissingValues',"Percent"]
 missing_num = missing_num[missing_num['MissingValues'] > 0]
-print(missingvalues)
+print(missing_num)
 
 # Attributes that shows garage and basement areas can be filled with 0.
 df_num.BsmtHalfBath = df_num.BsmtHalfBath.fillna(0)
@@ -190,3 +193,76 @@ RMSEscore = np.sqrt(mean_squared_error(y_test, y_pred))
 print("RMSE: {}".format(RMSEscore))
 
 
+# r^2 decreased and RMSE increased so we get worse results. We will keep outliers.
+
+# Feature Selection
+# Correlation plot for all the numeric variables in the dataset
+df2 = df_num.copy()
+df2['SalePrice'] = Ames.SalePrice
+corrmat = df2.corr()
+f, ax = plt.subplots(figsize=(15, 12))
+_ = sns.heatmap(corrmat, linecolor = 'white', cmap = 'magma', linewidths = 3)
+
+correlations = df_num.corr()
+correlations = correlations.iloc[:36, :36]
+cut_off = 0.5
+high_corrs = correlations[correlations.abs() > cut_off][correlations.abs() != 1].unstack().dropna().to_dict()
+high_corrs = pd.Series(high_corrs, index = high_corrs.keys())
+high_corrs = high_corrs.reset_index()
+high_corrs = pd.DataFrame(high_corrs)
+high_corrs.columns = ['Attributes1', 'Attributes2', 'Correlations']
+high_corrs['Correlations'] = high_corrs['Correlations'].drop_duplicates(keep = 'first')
+high_corrs = high_corrs.dropna().sort_values(by = 'Correlations', ascending = False)
+print(high_corrs)
+# We can eliminate attributes
+
+# Correlation with the SalePrice variable
+corr = df2.corr()['SalePrice']
+corr = corr[np.argsort(corr, axis=0)[::-1]]
+print(corr)
+
+# Variables highly correlated with SalePrice
+k = 10
+cols = corrmat.nlargest(k, 'SalePrice')['SalePrice'].index
+cm = np.corrcoef(df2[cols].values.T)
+sns.set(font_scale=1.25)
+f, ax = plt.subplots(figsize=(10, 8))
+hm = sns.heatmap(cm, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, linewidth = 5,
+                 yticklabels=cols.values, xticklabels=cols.values, cmap = 'viridis', linecolor = 'white')
+plt.show()
+
+f = pd.melt(Ames, id_vars = 'SalePrice', value_vars = cat_var)
+g = sns.FacetGrid(f, col = "variable",  col_wrap = 2, sharex = False, sharey = False, size = 10)
+g.map(sns.boxplot, 'value', 'SalePrice', palette = 'viridis')
+
+# Selecting important features based on box plots.
+important_cat = ['MSZoning', 'Utilities', 'Neighborhood', 'Condition1', 'Condition2', 'HouseStyle', 'MasVnrType',
+           'ExterQual', 'ExterCond', 'Foundation', 'HeatingQC', 'CentralAir', 'KitchenQual',"GarageType" ,'GarageFinish',
+           'GarageQual', 'PoolQC', 'SaleType']
+
+# Selecting important numeric features based on correlation with SalePrice.
+important_num = list(corrmat.columns)
+important_num.remove("SalePrice")
+
+# Dummfiying categorical values
+dummfiying = OneHotEncoder(drop='first')
+
+# Merging categorical with numerical values
+important_cat_dummfied = pd.DataFrame(dummfiying.fit_transform(df_cat[important_cat]).toarray())
+impoartant_df = pd.concat([df_num[important_num],important_cat_dummfied],axis=1)
+
+# Splitting the data into training and testing sets
+Xn_train, Xn_test, yn_train, yn_test = train_test_split(impoartant_df, y, test_size = 0.3, random_state = 42)
+
+regression_imp = LinearRegression()
+# Fitting a Linear Regression Model
+regression_imp.fit(Xn_train, yn_train)
+
+# Evaluating Performance Measures on the test set
+y_pred = regression_imp.predict(Xn_test)
+R2featured = r2_score(yn_test, y_pred)
+print("R^2 : {}".format(R2featured))
+RMSEfeatured = np.sqrt(mean_squared_error(yn_test, y_pred))
+print("RMSE: {}".format(RMSEfeatured))
+
+# Using only important values increased results so much. We will continue with this dataset.
