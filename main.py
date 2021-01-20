@@ -11,10 +11,12 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV
-import warnings
-
+from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import OneHotEncoder
+from scipy.stats import chisquare
+from sklearn.preprocessing import MinMaxScaler, normalize
 
+import warnings
 warnings.filterwarnings("ignore")
 pd.set_option('display.max_rows', 500)
 
@@ -31,7 +33,7 @@ print("All columns of dataframe:",Ames.columns)
 
 print(Ames.head(4))
 
-#Dropping order columns which is meaningless for machine learning algorithm.
+#Order column has no predictive power and created just for sorting data. So We can drop "order" column.
 Ames = Ames.drop(columns = "Order")
 
 print((Ames.apply(lambda a: a.isnull().values.any())).sum(),"columns have missing data")
@@ -50,6 +52,9 @@ sns.barplot(x = 'MissingValues', y = 'Columns', data = missingvalues, palette = 
 
 
 # Handling Missing Data (Categorical)
+
+#Attributes whose missing values constitute more than 50-60% of all instances could be deleted.
+#But instead they will be replaced by suitable values.
 
 #deleting spaces and other characters in columns names for selecting easily
 Ames.columns = Ames.columns.str.replace(" ","").str.replace("/","")
@@ -88,6 +93,7 @@ df_cat.MasVnrType=["None" if x is np.nan else x for x in df_cat.MasVnrType]
 df_cat.Electrical=["SBrkr" if x is np.nan else x for x in df_cat.Electrical]
 
 df_cat.isnull().values.any() #Checking if there is nan value left
+
 
 # Handling Missing Data (Numeric)
 missing_num = df_num.isnull().sum().sort_values(ascending = False)
@@ -179,6 +185,7 @@ y = np.log1p(Ames['SalePrice'])
 # Splitting the dataset into train and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
 
+# Implementing Regression
 # Linear Regression Model
 regression = LinearRegression()
 
@@ -187,11 +194,46 @@ regression.fit(X_train, y_train)
 
 # Prediction on the test set: Performance Measures
 y_pred = regression.predict(X_test)
-R2score = r2_score(y_test, y_pred)
-print("R^2 : {}".format(R2score))
 RMSEscore = np.sqrt(mean_squared_error(y_test, y_pred))
 print("RMSE: {}".format(RMSEscore))
 
+# Scatterplot of Predictions Vs. Actual Values
+plt.figure(figsize=(8,6)) #Figure size
+sns.regplot(y = y_pred, x = y_test, color = 'green', label = 'Test Data', scatter_kws={'alpha':0.6}) # plotting predicted values and real values for comparison
+plt.title('Predicted Values vs Test Values') # title of plot
+plt.xlabel('Real Values') # xlabel
+plt.ylabel('Predicted Values') #ylabel
+plt.show()
+
+
+# Improving Prediction
+
+# Outliers
+# Outlier may mislead the learning of the model.
+plt.figure(figsize = (14, 5)) #Plot size
+sns.boxplot('SalePrice', data = Ames, palette = 'rocket') # Plotting box plot
+
+# We have some expensive houses that fall into the region for outliers when measured by the 1.5xIQR metric in the boxplot.
+# We try to eliminate them and apply linear regression.
+
+# Detecting Outliters
+X_withoutoutliers = df[~((Ames.SalePrice - Ames.SalePrice.mean()) / Ames.SalePrice.std() > 3)]
+y_withoutoutliers = np.log1p(Ames[~((Ames.SalePrice - Ames.SalePrice.mean()) / Ames.SalePrice.std() > 3)]['SalePrice'])
+
+# Splitting the dataset into train ans test sets
+X_train_withoutoutliers, X_test_withoutoutliers, y_train_withoutoutliers, y_test_withoutoutliers = train_test_split(X_withoutoutliers, y_withoutoutliers, test_size = 0.3, random_state = 5)
+
+regression = LinearRegression()
+# Fitting a Linear Regression Model
+regression.fit(X_train_withoutoutliers, y_train_withoutoutliers)
+
+
+# Prediction on the test set: Performance Measures
+y_pred_withoutoutliers = regression.predict(X_test_withoutoutliers)
+R2score = r2_score(y_test_withoutoutliers, y_pred_withoutoutliers)
+print("R^2 : {}".format(R2score))
+RMSEscore = np.sqrt(mean_squared_error(y_test_withoutoutliers, y_pred_withoutoutliers))
+print("RMSE: {}".format(RMSEscore))
 
 # r^2 decreased and RMSE increased so we get worse results. We will keep outliers.
 
@@ -231,6 +273,7 @@ hm = sns.heatmap(cm, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'
                  yticklabels=cols.values, xticklabels=cols.values, cmap = 'viridis', linecolor = 'white')
 plt.show()
 
+
 f = pd.melt(Ames, id_vars = 'SalePrice', value_vars = cat_var)
 g = sns.FacetGrid(f, col = "variable",  col_wrap = 2, sharex = False, sharey = False, size = 10)
 g.map(sns.boxplot, 'value', 'SalePrice', palette = 'viridis')
@@ -260,9 +303,41 @@ regression_imp.fit(Xn_train, yn_train)
 
 # Evaluating Performance Measures on the test set
 y_pred = regression_imp.predict(Xn_test)
-R2featured = r2_score(yn_test, y_pred)
-print("R^2 : {}".format(R2featured))
 RMSEfeatured = np.sqrt(mean_squared_error(yn_test, y_pred))
 print("RMSE: {}".format(RMSEfeatured))
 
 # Using only important values increased results so much. We will continue with this dataset.
+
+# Scatterplot of Predictions Vs. Actual Values
+plt.figure(figsize=(8,6))
+sns.regplot(y = y_pred, x = yn_test, color = 'green', label = 'Test Data', scatter_kws={'alpha':0.6})
+plt.title('Predicted Values vs Test Values')
+plt.xlabel('Real Values')
+plt.ylabel('Predicted Values')
+plt.legend(loc = 'upper left')
+plt.show()
+
+
+# MLP Regressor
+
+# Implementing MLP Regressor
+mlpregr = MLPRegressor(hidden_layer_sizes=10, activation='relu',random_state=1, max_iter=500).fit(Xn_train, yn_train)
+
+# Prediction of X_test
+y_pred_mlp = mlpregr.predict(Xn_test)
+
+# Evaluating Performance Measures on the test set
+RMSEfeatured_mlp = np.sqrt(mean_squared_error(yn_test, y_pred_mlp))
+print("RMSE: {}".format(RMSEfeatured_mlp))
+
+#MLP didn't give us better results than Linear Regression
+
+# Scatterplot of Predictions Vs. Actual Values
+plt.figure(figsize=(8,6))
+sns.regplot(y = y_pred, x = yn_test, color = 'green', label = 'Test Data', scatter_kws={'alpha':0.6})
+plt.title('Predicted Values vs Test Values')
+plt.xlabel('Real Values')
+plt.ylabel('Predicted Values')
+plt.legend(loc = 'upper left')
+plt.show()
+
