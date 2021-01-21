@@ -15,6 +15,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import OneHotEncoder
 from scipy.stats import chisquare
 from sklearn.preprocessing import MinMaxScaler, normalize
+from sklearn.preprocessing import StandardScaler
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -303,6 +304,9 @@ regression_imp.fit(Xn_train, yn_train)
 
 # Evaluating Performance Measures on the test set
 y_pred = regression_imp.predict(Xn_test)
+
+R2featured = r2_score(yn_test, y_pred)
+print("R^2 : {}".format(R2featured))
 RMSEfeatured = np.sqrt(mean_squared_error(yn_test, y_pred))
 print("RMSE: {}".format(RMSEfeatured))
 
@@ -318,6 +322,29 @@ plt.legend(loc = 'upper left')
 plt.show()
 
 
+# Scaling
+scaler= StandardScaler()
+scaler.fit(Xn_train)
+Xn_train_scaled = scaler.transform(Xn_train)
+Xn_test_scaled = scaler.transform(Xn_test)
+
+
+regression_imp = LinearRegression()
+# Fitting a Linear Regression Model
+regression_imp.fit(Xn_train_scaled, yn_train)
+
+
+# Prediction of X_test
+y_pred_scaled = regression_imp.predict(Xn_test_scaled)
+
+# Evaluating Performance Measures on the test set
+R2featured = r2_score(yn_test, y_pred_scaled)
+print("R^2 : {}".format(R2featured))
+RMSEfeatured = np.sqrt(mean_squared_error(yn_test, y_pred_scaled))
+print("RMSE: {}".format(RMSEfeatured))
+
+# Scaling didn't give us better results
+
 # MLP Regressor
 
 # Implementing MLP Regressor
@@ -327,6 +354,8 @@ mlpregr = MLPRegressor(hidden_layer_sizes=10, activation='relu',random_state=1, 
 y_pred_mlp = mlpregr.predict(Xn_test)
 
 # Evaluating Performance Measures on the test set
+R2featured = r2_score(yn_test, y_pred_mlp)
+print("R^2 : {}".format(R2featured))
 RMSEfeatured_mlp = np.sqrt(mean_squared_error(yn_test, y_pred_mlp))
 print("RMSE: {}".format(RMSEfeatured_mlp))
 
