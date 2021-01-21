@@ -323,8 +323,9 @@ plt.show()
 
 
 # Scaling
-scaler= StandardScaler()
-scaler.fit(Xn_train)
+scaler= StandardScaler() # Defining Scaler
+scaler.fit(Xn_train) # Fitting Scaler to X_train
+# Transforming train and test stes
 Xn_train_scaled = scaler.transform(Xn_train)
 Xn_test_scaled = scaler.transform(Xn_test)
 
@@ -369,4 +370,4 @@ plt.xlabel('Real Values')
 plt.ylabel('Predicted Values')
 plt.legend(loc = 'upper left')
 plt.show()
-
+plt.close("all")
