@@ -16,9 +16,10 @@ Linear regression is applied to different features and determined best model.
 
 ## Structure: 
 1. main.py
-2. Report
+2. Report (Report.tex, Report.pdf, images)
 3. AmesHousing.csv
 4. requirements.txt
+5. README.md
 
 ## Language, version, and main file
 Python 3.9  
