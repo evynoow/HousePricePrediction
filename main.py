@@ -1,5 +1,5 @@
 
-#Importing Libraries and Data
+# ##Importing Libraries and Data
 
 import numpy as np
 import pandas as pd
@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 from sklearn import model_selection
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
-from sklearn.linear_model import LinearRegression, Lasso, Ridge
-from sklearn.model_selection import cross_val_score, train_test_split, GridSearchCV
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import OneHotEncoder
 from scipy.stats import chisquare
-from sklearn.preprocessing import MinMaxScaler, normalize
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 
 import warnings
@@ -22,10 +22,11 @@ warnings.filterwarnings("ignore")
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
+#Importing Data
 Ames = pd.read_csv("AmesHousing.csv")
 
 
-# Exploring Data
+# ## Exploring Data
 
 print(Ames.shape)
 print("Data has 82 columns and 2930 rows.")
@@ -55,7 +56,7 @@ plt.show(block=False)
 plt.pause(3)
 plt.close("all")
 
-# Handling Missing Data (Categorical)
+# ## Handling Missing Data (Categorical)
 
 #Attributes whose missing values constitute more than 50-60% of all instances could be deleted.
 #But instead they will be replaced by suitable values.
@@ -99,7 +100,7 @@ df_cat.Electrical=["SBrkr" if x is np.nan else x for x in df_cat.Electrical]
 df_cat.isnull().values.any() #Checking if there is nan value left
 
 
-# Handling Missing Data (Numeric)
+# ## Handling Missing Data (Numeric)
 missing_num = df_num.isnull().sum().sort_values(ascending = False)
 missing_num = missing_num.reset_index()
 missing_num['Percent'] = missing_num.iloc[:, 1].apply(lambda x: x*100/len(Ames))
@@ -158,7 +159,7 @@ df_num['GarageYrBlt'].fillna(df_num['GarageYrBlt'].median(), inplace=True) # fil
 df_num.isnull().values.any() # checking
 
 
-# Creating dummy variables for categorical attributes
+# ##Creating dummy variables for categorical attributes
 # Creating Dummy Variables
 df_cat_dummy = pd.get_dummies(df_cat, drop_first = True) #creates and drops one dummy
 df = pd.concat([df_num, df_cat_dummy], axis = 1) # Concatenate dummy cat vars and num vars
@@ -166,7 +167,7 @@ df = pd.concat([df_num, df_cat_dummy], axis = 1) # Concatenate dummy cat vars an
 print(df.head(2))
 print(df.shape)
 
-# Regression Analysis
+# ##Regression Analysis
 # To apply regression attributed that will predict should be distribute as normal distribution.
 
 plt.figure(figsize=(14,5)) #figure size
@@ -193,9 +194,9 @@ X = df
 y = np.log1p(Ames['SalePrice'])
 
 # Splitting the dataset into train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 5)
 
-# Implementing Regression
+# ##Implementing Regression
 # Linear Regression Model
 regression = LinearRegression()
 
@@ -222,9 +223,9 @@ plt.pause(3)
 plt.close("all")
 
 
-# Improving Prediction
+# ##Improving Prediction
 
-# Outliers
+# ##Outliers
 # Outlier may mislead the learning of the model.
 plt.figure(figsize = (14, 5)) #Plot size
 sns.boxplot('SalePrice', data = Ames, palette = 'rocket') # Plotting box plot
@@ -257,7 +258,7 @@ print("RMSE: {}".format(RMSEscore_wooutliers))
 
 # r^2 decreased and RMSE increased so we get worse results. We will keep outliers.
 
-# Feature Selection
+# ##Feature Selection
 # Correlation plot for all the numeric variables in the dataset
 df2 = df_num.copy()
 df2['SalePrice'] = Ames.SalePrice
@@ -303,9 +304,9 @@ plt.close("all")
 
 
 f = pd.melt(Ames, id_vars = 'SalePrice', value_vars = cat_var)
-g = sns.FacetGrid(f, col = "variable",  col_wrap = 2, sharex = False, sharey = False, size = 10)
+g = sns.FacetGrid(f, col = "variable",  col_wrap = 5, sharex = False, sharey = False, size = 5)
 g.map(sns.boxplot, 'value', 'SalePrice', palette = 'viridis')
-plt.savefig("BoxPlotsOfCatgoricalAttributes.pdf")
+plt.savefig("BoxPlotsOfCategoricalAttributes.pdf")
 plt.show(block=False)
 plt.pause(3)
 plt.close("all")
@@ -328,7 +329,7 @@ important_cat_dummfied = pd.DataFrame(dummfiying.fit_transform(df_cat[important_
 impoartant_df = pd.concat([df_num[important_num],important_cat_dummfied],axis=1)
 
 # Splitting the data into training and testing sets
-Xn_train, Xn_test, yn_train, yn_test = train_test_split(impoartant_df, y, test_size = 0.3, random_state = 42)
+Xn_train, Xn_test, yn_train, yn_test = train_test_split(impoartant_df, y, test_size = 0.3, random_state = 5)
 
 regression_imp = LinearRegression()
 # Fitting a Linear Regression Model
@@ -356,7 +357,7 @@ plt.pause(3)
 plt.close("all")
 
 
-# Scaling
+# ##Scaling
 scaler= StandardScaler() # Defining Scaler
 scaler.fit(Xn_train) # Fitting Scaler to X_train
 # Transforming train and test stes
@@ -380,7 +381,7 @@ print("RMSE: {}".format(RMSEfeatured_scaled))
 
 # Scaling didn't give us better results
 
-# MLP Regressor
+# ##MLP Regressor
 
 # Implementing MLP Regressor
 mlpregr = MLPRegressor(hidden_layer_sizes=5, activation='relu',random_state=1, max_iter=500).fit(Xn_train, yn_train)
@@ -398,7 +399,7 @@ print("RMSE: {}".format(RMSEfeatured_mlp))
 
 # Scatterplot of Predictions Vs. Actual Values
 plt.figure(figsize=(8,6))
-sns.regplot(y = y_pred, x = yn_test, color = 'green', label = 'Test Data', scatter_kws={'alpha':0.6})
+sns.regplot(y = y_pred, x = yn_test, color = 'green', label = 'Test Data', scatter_kws={'alpha':0.6}) #points
 plt.title('Predicted Values vs Test Values')
 plt.xlabel('Real Values')
 plt.ylabel('Predicted Values')
