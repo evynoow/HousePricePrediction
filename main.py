@@ -13,7 +13,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import OneHotEncoder
-from scipy.stats import chisquare
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 
@@ -33,10 +32,11 @@ print("Data has 82 columns and 2930 rows.")
 
 print("All columns of dataframe: \n",Ames.columns)
 
-print("First 4 row of data: \n", Ames.head(4))
-
 #Order column has no predictive power and created just for sorting data. So We can drop "order" column.
 Ames = Ames.drop(columns = "Order")
+
+#deleting spaces and other characters in columns names for selecting easily
+Ames.columns = Ames.columns.str.replace(" ","").str.replace("/","")
 
 print((Ames.apply(lambda a: a.isnull().values.any())).sum(),"columns have missing data")
 
@@ -45,6 +45,7 @@ missingvalues = missingvalues.reset_index()
 missingvalues['Percent'] = missingvalues.iloc[:, 1].apply(lambda x: x*100/len(Ames)) # calculating The percentage of missing values for each feature
 missingvalues.columns = ['Columns', 'MissingValues',"Percent"] #renaming column names
 missingvalues = missingvalues[missingvalues['MissingValues'] > 0] #filtering attributes with no missing values
+print("Missing data counts of categorical attributes")
 print(missingvalues)
 
 #Plotting missing value count for each attribute
@@ -61,8 +62,6 @@ plt.close("all")
 #Attributes whose missing values constitute more than 50-60% of all instances could be deleted.
 #But instead they will be replaced by suitable values.
 
-#deleting spaces and other characters in columns names for selecting easily
-Ames.columns = Ames.columns.str.replace(" ","").str.replace("/","")
 
 #defining categorical and numerical values
 
@@ -106,6 +105,7 @@ missing_num = missing_num.reset_index()
 missing_num['Percent'] = missing_num.iloc[:, 1].apply(lambda x: x*100/len(Ames))
 missing_num.columns = ['Columns', 'MissingValues',"Percent"]
 missing_num = missing_num[missing_num['MissingValues'] > 0]
+print("Missing value counts of numeric attributes")
 print(missing_num)
 
 # Attributes that shows garage and basement areas can be filled with 0.
@@ -164,8 +164,7 @@ df_num.isnull().values.any() # checking
 df_cat_dummy = pd.get_dummies(df_cat, drop_first = True) #creates and drops one dummy
 df = pd.concat([df_num, df_cat_dummy], axis = 1) # Concatenate dummy cat vars and num vars
 
-print(df.head(2))
-print(df.shape)
+print("Shape of data after dummying",df.shape)
 
 # ##Regression Analysis
 # To apply regression attributed that will predict should be distribute as normal distribution.
@@ -203,6 +202,7 @@ regression = LinearRegression()
 # Fitting a Linear Regression Model
 regression.fit(X_train, y_train)
 
+print("Results of Nonfeatured Data Linear Regression")
 # Prediction on the test set: Performance Measures
 y_pred = regression.predict(X_test)
 R2nonFeatured = r2_score(y_test, y_pred)
@@ -248,7 +248,7 @@ regression = LinearRegression()
 # Fitting a Linear Regression Model
 regression.fit(X_train_withoutoutliers, y_train_withoutoutliers)
 
-
+print("Results of without outliers linear regression:")
 # Prediction on the test set: Performance Measures
 y_pred_withoutoutliers = regression.predict(X_test_withoutoutliers)
 R2score_wooutliers = r2_score(y_test_withoutoutliers, y_pred_withoutoutliers)
@@ -271,22 +271,11 @@ plt.pause(3)
 plt.close("all")
 
 
-correlations = df_num.corr()
-correlations = correlations.iloc[:36, :36]
-cut_off = 0.5
-high_corrs = correlations[correlations.abs() > cut_off][correlations.abs() != 1].unstack().dropna().to_dict()
-high_corrs = pd.Series(high_corrs, index = high_corrs.keys())
-high_corrs = high_corrs.reset_index()
-high_corrs = pd.DataFrame(high_corrs)
-high_corrs.columns = ['Attributes1', 'Attributes2', 'Correlations']
-high_corrs['Correlations'] = high_corrs['Correlations'].drop_duplicates(keep = 'first')
-high_corrs = high_corrs.dropna().sort_values(by = 'Correlations', ascending = False)
-print(high_corrs)
-# We can eliminate attributes
-
 # Correlation with the SalePrice variable
 corr = df2.corr()['SalePrice']
 corr = corr[np.argsort(corr, axis=0)[::-1]]
+corr = pd.DataFrame(corr).reset_index().iloc[1:,:]
+corr.columns = ["Attributes","Correlation"]
 print(corr)
 
 # Variables highly correlated with SalePrice
@@ -335,6 +324,7 @@ regression_imp = LinearRegression()
 # Fitting a Linear Regression Model
 regression_imp.fit(Xn_train, yn_train)
 
+print("Reuslt of data with feature selection linear regression:")
 # Evaluating Performance Measures on the test set
 y_pred = regression_imp.predict(Xn_test)
 
@@ -369,7 +359,7 @@ regression_imp = LinearRegression()
 # Fitting a Linear Regression Model
 regression_imp.fit(Xn_train_scaled, yn_train)
 
-
+print("Results of scaled data linear regression:")
 # Prediction of X_test
 y_pred_scaled = regression_imp.predict(Xn_test_scaled)
 
@@ -389,6 +379,7 @@ mlpregr = MLPRegressor(hidden_layer_sizes=5, activation='relu',random_state=1, m
 # Prediction of X_test
 y_pred_mlp = mlpregr.predict(Xn_test)
 
+print("Results of data with feature selection MLP regression:")
 # Evaluating Performance Measures on the test set
 R2featured_mlp = r2_score(yn_test, y_pred_mlp)
 print("R^2 : {}".format(R2featured_mlp))
