@@ -12,7 +12,7 @@ Results have been improved with methods such as outlier detection, feature selec
 AmesHouse Dataset is analyzed and visualized. Missing data were filled by examining the categorical and numerical variables in detail.  
 Features are analyzed and correlation between features is examined. Most correlated features with price are selected and used.  
 Outliers are determined. Outlier eliminated but it didn't improve results.  
-Multi linear regression is applied to different features and determined best model.  
+Linear regression is applied to different features and determined best model.  
 
 ## Structure: 
 1. main.py
