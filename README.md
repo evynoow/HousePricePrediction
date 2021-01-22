@@ -24,4 +24,5 @@ Linear regression is applied to different features and determined best model.
 Python 3.9  
 python3 main.py
 
-
+## Additional
+The figures in the code are saved as pdf.
