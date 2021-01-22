@@ -20,7 +20,7 @@ from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings("ignore")
 pd.set_option('display.max_rows', 500)
-
+pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
 Ames = pd.read_csv("AmesHousing.csv")
 
@@ -30,9 +30,9 @@ Ames = pd.read_csv("AmesHousing.csv")
 print(Ames.shape)
 print("Data has 82 columns and 2930 rows.")
 
-print("All columns of dataframe:",Ames.columns)
+print("All columns of dataframe: \n",Ames.columns)
 
-print(Ames.head(4))
+print("First 4 row of data: \n", Ames.head(4))
 
 #Order column has no predictive power and created just for sorting data. So We can drop "order" column.
 Ames = Ames.drop(columns = "Order")
@@ -47,10 +47,13 @@ missingvalues = missingvalues[missingvalues['MissingValues'] > 0] #filtering att
 print(missingvalues)
 
 #Plotting missing value count for each attribute
-plt.figure(figsize=(13, 6))
+plt.figure(figsize=(13, 6))  #plot size
 sns.set()
 sns.barplot(x = 'MissingValues', y = 'Columns', data = missingvalues, palette = 'rocket') #creating plot
-
+plt.savefig("MissingValuesPlot.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
 
 # Handling Missing Data (Categorical)
 
@@ -138,7 +141,10 @@ sns.distplot(df_num_no_null.MasVnrArea) #creating plot
 
 plt.subplot(133) #third plot
 sns.distplot(df_num_no_null.GarageYrBlt) #creating plot
-plt.show()
+plt.savefig("Distribution_Of_Atrributes_With_Missing_Values.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
 
 # We can see that LotFrontage attribute is more like normal distribution.
 # MasVnrArea and GarageYtBlt is more like skewed distribution.
@@ -178,7 +184,10 @@ plt.hist(np.log1p(Ames.SalePrice), bins=20, color='b', density=True, label='Sale
 sns.kdeplot(np.log1p(Ames.SalePrice), color='red')
 plt.title('Ames Houses Sale Price - Log transformed')
 plt.xlabel('log(Price)') ; plt.ylabel('#Count') ; plt.legend(loc='upper right')
-plt.show()
+plt.savefig("SalePrice_LogTransformedSalePrice.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
 
 X = df
 y = np.log1p(Ames['SalePrice'])
@@ -195,8 +204,11 @@ regression.fit(X_train, y_train)
 
 # Prediction on the test set: Performance Measures
 y_pred = regression.predict(X_test)
-RMSEscore = np.sqrt(mean_squared_error(y_test, y_pred))
-print("RMSE: {}".format(RMSEscore))
+R2nonFeatured = r2_score(y_test, y_pred)
+print("R^2 : {}".format(R2nonFeatured))
+RMSEscorenonFeatured = np.sqrt(mean_squared_error(y_test, y_pred))
+print("RMSE: {}".format(RMSEscorenonFeatured))
+
 
 # Scatterplot of Predictions Vs. Actual Values
 plt.figure(figsize=(8,6)) #Figure size
@@ -204,7 +216,10 @@ sns.regplot(y = y_pred, x = y_test, color = 'green', label = 'Test Data', scatte
 plt.title('Predicted Values vs Test Values') # title of plot
 plt.xlabel('Real Values') # xlabel
 plt.ylabel('Predicted Values') #ylabel
-plt.show()
+plt.savefig("NonfeaturedRegressionPlot.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
 
 
 # Improving Prediction
@@ -213,6 +228,10 @@ plt.show()
 # Outlier may mislead the learning of the model.
 plt.figure(figsize = (14, 5)) #Plot size
 sns.boxplot('SalePrice', data = Ames, palette = 'rocket') # Plotting box plot
+plt.savefig("BoxplotofSalePrice.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
 
 # We have some expensive houses that fall into the region for outliers when measured by the 1.5xIQR metric in the boxplot.
 # We try to eliminate them and apply linear regression.
@@ -231,10 +250,10 @@ regression.fit(X_train_withoutoutliers, y_train_withoutoutliers)
 
 # Prediction on the test set: Performance Measures
 y_pred_withoutoutliers = regression.predict(X_test_withoutoutliers)
-R2score = r2_score(y_test_withoutoutliers, y_pred_withoutoutliers)
-print("R^2 : {}".format(R2score))
-RMSEscore = np.sqrt(mean_squared_error(y_test_withoutoutliers, y_pred_withoutoutliers))
-print("RMSE: {}".format(RMSEscore))
+R2score_wooutliers = r2_score(y_test_withoutoutliers, y_pred_withoutoutliers)
+print("R^2 : {}".format(R2score_wooutliers))
+RMSEscore_wooutliers = np.sqrt(mean_squared_error(y_test_withoutoutliers, y_pred_withoutoutliers))
+print("RMSE: {}".format(RMSEscore_wooutliers))
 
 # r^2 decreased and RMSE increased so we get worse results. We will keep outliers.
 
@@ -245,6 +264,11 @@ df2['SalePrice'] = Ames.SalePrice
 corrmat = df2.corr()
 f, ax = plt.subplots(figsize=(15, 12))
 _ = sns.heatmap(corrmat, linecolor = 'white', cmap = 'magma', linewidths = 3)
+plt.savefig("Correlations.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
+
 
 correlations = df_num.corr()
 correlations = correlations.iloc[:36, :36]
@@ -272,12 +296,20 @@ sns.set(font_scale=1.25)
 f, ax = plt.subplots(figsize=(10, 8))
 hm = sns.heatmap(cm, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, linewidth = 5,
                  yticklabels=cols.values, xticklabels=cols.values, cmap = 'viridis', linecolor = 'white')
-plt.show()
+plt.savefig("CorrelationBetweenMostImportantFeatures.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
 
 
 f = pd.melt(Ames, id_vars = 'SalePrice', value_vars = cat_var)
 g = sns.FacetGrid(f, col = "variable",  col_wrap = 2, sharex = False, sharey = False, size = 10)
 g.map(sns.boxplot, 'value', 'SalePrice', palette = 'viridis')
+plt.savefig("BoxPlotsOfCatgoricalAttributes.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
+
 
 # Selecting important features based on box plots.
 important_cat = ['MSZoning', 'Utilities', 'Neighborhood', 'Condition1', 'Condition2', 'HouseStyle', 'MasVnrType',
@@ -305,10 +337,10 @@ regression_imp.fit(Xn_train, yn_train)
 # Evaluating Performance Measures on the test set
 y_pred = regression_imp.predict(Xn_test)
 
-R2featured = r2_score(yn_test, y_pred)
-print("R^2 : {}".format(R2featured))
-RMSEfeatured = np.sqrt(mean_squared_error(yn_test, y_pred))
-print("RMSE: {}".format(RMSEfeatured))
+R2featured_important = r2_score(yn_test, y_pred)
+print("R^2 : {}".format(R2featured_important))
+RMSEfeatured_important = np.sqrt(mean_squared_error(yn_test, y_pred))
+print("RMSE: {}".format(RMSEfeatured_important))
 
 # Using only important values increased results so much. We will continue with this dataset.
 
@@ -318,8 +350,10 @@ sns.regplot(y = y_pred, x = yn_test, color = 'green', label = 'Test Data', scatt
 plt.title('Predicted Values vs Test Values')
 plt.xlabel('Real Values')
 plt.ylabel('Predicted Values')
-plt.legend(loc = 'upper left')
-plt.show()
+plt.savefig("FeatureSelectionRegressionPlot.pdf")
+plt.show(block=False)
+plt.pause(3)
+plt.close("all")
 
 
 # Scaling
@@ -339,24 +373,24 @@ regression_imp.fit(Xn_train_scaled, yn_train)
 y_pred_scaled = regression_imp.predict(Xn_test_scaled)
 
 # Evaluating Performance Measures on the test set
-R2featured = r2_score(yn_test, y_pred_scaled)
-print("R^2 : {}".format(R2featured))
-RMSEfeatured = np.sqrt(mean_squared_error(yn_test, y_pred_scaled))
-print("RMSE: {}".format(RMSEfeatured))
+R2featured_scaled = r2_score(yn_test, y_pred_scaled)
+print("R^2 : {}".format(R2featured_scaled))
+RMSEfeatured_scaled = np.sqrt(mean_squared_error(yn_test, y_pred_scaled))
+print("RMSE: {}".format(RMSEfeatured_scaled))
 
 # Scaling didn't give us better results
 
 # MLP Regressor
 
 # Implementing MLP Regressor
-mlpregr = MLPRegressor(hidden_layer_sizes=10, activation='relu',random_state=1, max_iter=500).fit(Xn_train, yn_train)
+mlpregr = MLPRegressor(hidden_layer_sizes=5, activation='relu',random_state=1, max_iter=500).fit(Xn_train, yn_train)
 
 # Prediction of X_test
 y_pred_mlp = mlpregr.predict(Xn_test)
 
 # Evaluating Performance Measures on the test set
-R2featured = r2_score(yn_test, y_pred_mlp)
-print("R^2 : {}".format(R2featured))
+R2featured_mlp = r2_score(yn_test, y_pred_mlp)
+print("R^2 : {}".format(R2featured_mlp))
 RMSEfeatured_mlp = np.sqrt(mean_squared_error(yn_test, y_pred_mlp))
 print("RMSE: {}".format(RMSEfeatured_mlp))
 
@@ -368,6 +402,20 @@ sns.regplot(y = y_pred, x = yn_test, color = 'green', label = 'Test Data', scatt
 plt.title('Predicted Values vs Test Values')
 plt.xlabel('Real Values')
 plt.ylabel('Predicted Values')
-plt.legend(loc = 'upper left')
-plt.show()
+plt.show(block=False)
+plt.pause(3)
 plt.close("all")
+
+# Combining All Results
+results = pd.DataFrame([[(R2nonFeatured),RMSEscorenonFeatured],
+[R2score_wooutliers,RMSEscore_wooutliers],
+[R2featured_important,RMSEfeatured_important],
+[R2featured_mlp,RMSEfeatured_mlp]])
+
+# Column Names
+results.columns = ["R-squared","RMSE"]
+
+# Index Names
+results.index = ["NonFeatured","Without Outliers","Feature Selection","MLP Regression"]
+
+print(results)
